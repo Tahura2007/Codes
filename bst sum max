@@ -1,0 +1,66 @@
+#include <limits.h>
+#include <stdlib.h>
+
+int maxSum;
+
+int* solve(struct TreeNode* root)
+{
+    int *res = malloc(4 * sizeof(int));
+
+    if (root == NULL)
+    {
+        res[0] = 1;
+        res[1] = 0;
+        res[2] = INT_MAX;
+        res[3] = INT_MIN;
+        return res;
+    }
+
+    int *left = solve(root->left);
+    int *right = solve(root->right);
+
+    if (left[0] == 1 &&
+        right[0] == 1 &&
+        left[3] < root->val &&
+        root->val < right[2])
+    {
+        int sum = left[1] + root->val + right[1];
+
+        if (sum > maxSum)
+            maxSum = sum;
+
+        res[0] = 1;
+        res[1] = sum;
+
+        res[2] = (left[2] < root->val)
+                 ? left[2]
+                 : root->val;
+
+        res[3] = (right[3] > root->val)
+                 ? right[3]
+                 : root->val;
+    }
+    else
+    {
+        res[0] = 0;
+        res[1] = 0;
+        res[2] = INT_MIN;
+        res[3] = INT_MAX;
+    }
+
+    free(left);
+    free(right);
+
+    return res;
+}
+
+int maxSumBST(struct TreeNode* root)
+{
+    maxSum = 0;
+
+    int *res = solve(root);
+
+    free(res);
+
+    return maxSum;
+}
