@@ -1,0 +1,139 @@
+#include <stdlib.h>
+#include <stdbool.h>
+#include <limits.h>
+
+struct TreeNode* roots[200];
+int n;
+
+int findRootIndex(int value)
+{
+    for (int i = 0; i < n; i++)
+    {
+        if (roots[i] != NULL && roots[i]->val == value)
+            return i;
+    }
+
+    return -1;
+}
+
+bool validate(struct TreeNode* root, long long min, long long max)
+{
+    if (root == NULL)
+        return true;
+
+    if (root->val <= min || root->val >= max)
+        return false;
+
+    return validate(root->left, min, root->val) &&
+           validate(root->right, root->val, max);
+}
+
+bool mergeTree(struct TreeNode* root, int *used)
+{
+    if (root == NULL)
+        return true;
+
+    
+    if (root->left == NULL && root->right == NULL)
+    {
+        int index = findRootIndex(root->val);
+
+        if (index != -1 && !used[index])
+        {
+            used[index] = 1;
+
+            /*
+               Replace this leaf with the tree having
+               the same root value.
+            */
+            root->left = roots[index]->left;
+            root->right = roots[index]->right;
+
+            return true;
+        }
+
+        return true;
+    }
+
+    if (!mergeTree(root->left, used))
+        return false;
+
+    if (!mergeTree(root->right, used))
+        return false;
+
+    return true;
+}
+
+struct TreeNode* canMerge(struct TreeNode** trees, int treesSize)
+{
+    n = treesSize;
+
+    for (int i = 0; i < n; i++)
+        roots[i] = trees[i];
+
+    
+    int rootIndex = -1;
+
+    for (int i = 0; i < n; i++)
+    {
+        bool isChild = false;
+
+        for (int j = 0; j < n; j++)
+        {
+            if (i == j)
+                continue;
+
+            if ((trees[j]->left != NULL &&
+                 trees[j]->left->val == trees[i]->val) ||
+                (trees[j]->right != NULL &&
+                 trees[j]->right->val == trees[i]->val))
+            {
+                isChild = true;
+                break;
+            }
+        }
+
+        if (!isChild)
+        {
+            if (rootIndex != -1)
+                return NULL;
+
+            rootIndex = i;
+        }
+    }
+
+    if (rootIndex == -1)
+        return NULL;
+
+    struct TreeNode* root = trees[rootIndex];
+
+    int *used = calloc(n, sizeof(int));
+
+    used[rootIndex] = 1;
+
+
+    if (!mergeTree(root, used))
+    {
+        free(used);
+        return NULL;
+    }
+
+
+    for (int i = 0; i < n; i++)
+    {
+        if (!used[i])
+        {
+            free(used);
+            return NULL;
+        }
+    }
+    if (!validate(root, LLONG_MIN, LLONG_MAX))
+    {
+        free(used);
+        return NULL;
+    }
+
+    free(used);
+
+    return root;
+}
